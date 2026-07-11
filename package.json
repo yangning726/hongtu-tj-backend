@@ -1,0 +1,13 @@
+{
+  "name": "hongtu-tj-enrollment-backend",
+  "version": "1.0.0",
+  "description": "鸿途生涯 - 天津招生目录独立后台服务",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}

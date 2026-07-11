@@ -1,0 +1,22 @@
+# Render Blueprint - 鸿途生涯招生目录后台
+# 在 Render 控制台 New -> Blueprint 即可使用此文件自动创建服务
+services:
+  - type: web
+    name: hongtu-tj-backend
+    runtime: node
+    plan: free
+    region: singapore  # 新加坡，离中国最近
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: ADMIN_PASSWORD
+        sync: false  # 手动在 Render 控制台填写
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: WECOM_KEY
+        sync: false
+        # 企业微信群机器人 webhook key，可选

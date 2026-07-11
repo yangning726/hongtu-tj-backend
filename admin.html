@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>鸿途生涯 · 后台管理系统</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #f5f4ed;
+  --primary: #c96442;
+  --primary-light: #e8826a;
+  --primary-dark: #a14a30;
+  --text: #333;
+  --text-light: #888;
+  --border: #e5e4dd;
+  --card: #fff;
+  --green: #52a447;
+  --red: #d4493f;
+  --shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+body { font-family: -apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); }
+
+/* === 登录页 === */
+#loginPage { display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+.login-card {
+  background: var(--card); border-radius: 16px; padding: 48px 40px; width: 400px; max-width: 90vw;
+  box-shadow: var(--shadow); text-align: center;
+}
+.login-logo { font-size: 40px; margin-bottom: 12px; }
+.login-title { font-size: 22px; font-weight: 700; color: var(--primary); margin-bottom: 6px; }
+.login-sub { font-size: 14px; color: var(--text-light); margin-bottom: 28px; }
+.login-input {
+  width: 100%; padding: 12px 16px; border: 2px solid var(--border); border-radius: 10px;
+  font-size: 16px; margin-bottom: 16px; transition: border-color 0.2s; outline: none;
+}
+.login-input:focus { border-color: var(--primary); }
+.login-btn {
+  width: 100%; padding: 12px; background: var(--primary); color: #fff; border: none;
+  border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.2s;
+}
+.login-btn:hover { background: var(--primary-dark); }
+.login-err { color: var(--red); font-size: 14px; margin-top: 12px; min-height: 20px; }
+
+/* === 管理面板 === */
+#adminPage { display: none; }
+.topbar {
+  background: var(--card); border-bottom: 1px solid var(--border); padding: 0 24px;
+  height: 60px; display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.topbar-left { display: flex; align-items: center; gap: 12px; }
+.topbar-logo { font-size: 20px; }
+.topbar-title { font-size: 18px; font-weight: 700; color: var(--primary); }
+.topbar-right { display: flex; align-items: center; gap: 16px; }
+.topbar-user { font-size: 14px; color: var(--text-light); }
+.btn-logout {
+  padding: 6px 16px; border: 1px solid var(--border); border-radius: 8px; background: #fff;
+  color: var(--text-light); cursor: pointer; font-size: 14px; transition: all 0.2s;
+}
+.btn-logout:hover { border-color: var(--red); color: var(--red); }
+
+.container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+/* 统计卡片 */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.stat-card {
+  background: var(--card); border-radius: 12px; padding: 20px 24px; box-shadow: var(--shadow);
+  display: flex; align-items: center; gap: 16px;
+}
+.stat-icon { font-size: 36px; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; border-radius: 12px; }
+.stat-icon.bg-orange { background: #fff3ed; }
+.stat-icon.bg-green { background: #edf7ec; }
+.stat-icon.bg-blue { background: #eef4fb; }
+.stat-icon.bg-purple { background: #f5f0fa; }
+.stat-info { flex: 1; }
+.stat-num { font-size: 28px; font-weight: 700; line-height: 1.2; }
+.stat-label { font-size: 13px; color: var(--text-light); margin-top: 4px; }
+
+/* 趋势图 */
+.chart-section { background: var(--card); border-radius: 12px; padding: 24px; box-shadow: var(--shadow); margin-bottom: 24px; }
+.section-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; color: var(--text); }
+.chart-bars { display: flex; align-items: flex-end; justify-content: space-around; height: 120px; gap: 8px; padding-top: 20px; }
+.chart-bar { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.bar-fill { width: 100%; max-width: 48px; background: linear-gradient(180deg, var(--primary-light), var(--primary)); border-radius: 6px 6px 0 0; min-height: 4px; transition: height 0.5s ease; position: relative; }
+.bar-fill:hover::after { content: attr(data-count); position: absolute; top: -24px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; font-size: 12px; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+.bar-label { font-size: 12px; color: var(--text-light); }
+
+/* 双列统计 */
+.dual-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+@media (max-width: 768px) { .dual-col { grid-template-columns: 1fr; } }
+.rank-list { list-style: none; }
+.rank-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+.rank-item:last-child { border-bottom: none; }
+.rank-num { display: inline-flex; width: 24px; height: 24px; align-items: center; justify-content: center; border-radius: 6px; font-size: 12px; font-weight: 700; margin-right: 8px; }
+.rank-num.top1 { background: #fef0e6; color: var(--primary); }
+.rank-num.top2 { background: #f0f0f0; color: #888; }
+.rank-num.top3 { background: #fdf3e3; color: #b8860b; }
+.rank-num.other { background: #f5f5f5; color: #aaa; }
+.rank-name { flex: 1; }
+.rank-count { font-weight: 600; color: var(--primary); }
+
+/* 工具栏 */
+.toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.search-box {
+  flex: 1; min-width: 200px; padding: 10px 16px; border: 2px solid var(--border);
+  border-radius: 10px; font-size: 14px; outline: none; transition: border-color 0.2s;
+}
+.search-box:focus { border-color: var(--primary); }
+.select-grade {
+  padding: 10px 16px; border: 2px solid var(--border); border-radius: 10px; font-size: 14px;
+  outline: none; cursor: pointer; background: #fff; min-width: 120px;
+}
+.btn-export {
+  padding: 10px 20px; background: var(--green); color: #fff; border: none; border-radius: 10px;
+  font-size: 14px; font-weight: 600; cursor: pointer; transition: opacity 0.2s;
+}
+.btn-export:hover { opacity: 0.9; }
+.btn-refresh {
+  padding: 10px 16px; background: #fff; border: 2px solid var(--border); border-radius: 10px;
+  font-size: 14px; cursor: pointer; transition: border-color 0.2s;
+}
+.btn-refresh:hover { border-color: var(--primary); }
+
+/* 数据表 */
+.table-wrap { background: var(--card); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+thead { background: #faf7ef; }
+th { padding: 12px 16px; text-align: left; font-weight: 600; color: #666; border-bottom: 2px solid var(--border); white-space: nowrap; }
+td { padding: 10px 16px; border-bottom: 1px solid #f5f5f0; }
+tbody tr:hover { background: #fafafa; }
+.tag-grade { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+.tag-g3 { background: #e8f5e9; color: #2e7d32; }
+.tag-g4 { background: #fff3e0; color: #e65100; }
+.tag-g5 { background: #e3f2fd; color: #1565c0; }
+.tag-g6 { background: #f3e5f5; color: #7b1fa2; }
+.tag-other { background: #f5f5f5; color: #888; }
+.btn-delete {
+  padding: 4px 12px; border: 1px solid var(--border); border-radius: 6px; background: #fff;
+  color: var(--red); cursor: pointer; font-size: 12px; transition: all 0.2s;
+}
+.btn-delete:hover { background: var(--red); color: #fff; border-color: var(--red); }
+
+/* 空状态 */
+.empty { text-align: center; padding: 60px 20px; color: var(--text-light); }
+.empty-icon { font-size: 48px; margin-bottom: 12px; }
+
+/* 分页 */
+.pagination { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 16px; }
+.page-btn {
+  padding: 6px 14px; border: 1px solid var(--border); border-radius: 8px; background: #fff;
+  cursor: pointer; font-size: 14px; transition: all 0.2s;
+}
+.page-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
+.page-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.page-info { font-size: 13px; color: var(--text-light); margin: 0 8px; }
+
+/* 加载 */
+.loading { text-align: center; padding: 40px; color: var(--text-light); }
+.spinner { display: inline-block; width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Toast */
+.toast { position: fixed; top: 80px; right: 24px; background: #333; color: #fff; padding: 12px 24px; border-radius: 8px; font-size: 14px; z-index: 9999; opacity: 0; transform: translateY(-10px); transition: all 0.3s; }
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.success { background: var(--green); }
+.toast.error { background: var(--red); }
+</style>
+</head>
+<body>
+
+<!-- 登录页 -->
+<div id="loginPage">
+  <div class="login-card">
+    <div class="login-logo">🔒</div>
+    <div class="login-title">鸿途生涯 · 后台管理</div>
+    <div class="login-sub">天津招生目录注册管理系统</div>
+    <input type="password" class="login-input" id="loginPass" placeholder="请输入管理密码" autofocus>
+    <div class="login-err" id="loginErr"></div>
+    <button class="login-btn" id="loginBtn">登 录</button>
+  </div>
+</div>
+
+<!-- 管理面板 -->
+<div id="adminPage">
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-logo">🎓</span>
+      <span class="topbar-title">鸿途生涯 · 后台管理</span>
+    </div>
+    <div class="topbar-right">
+      <span class="topbar-user" id="topbarUser"></span>
+      <button class="btn-logout" id="btnApiConfig" style="border-color:#c96442;color:#c96442;">⚙️ 后端地址</button>
+      <button class="btn-logout" id="btnLogout">退出登录</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- 统计卡片 -->
+    <div class="stats-grid" id="statsGrid">
+      <div class="stat-card"><div class="stat-icon bg-orange">📊</div><div class="stat-info"><div class="stat-num" id="statTotal">-</div><div class="stat-label">总注册数</div></div></div>
+      <div class="stat-card"><div class="stat-icon bg-green">📅</div><div class="stat-info"><div class="stat-num" id="statToday">-</div><div class="stat-label">今日新增</div></div></div>
+      <div class="stat-card"><div class="stat-icon bg-blue">📈</div><div class="stat-info"><div class="stat-num" id="statWeek">-</div><div class="stat-label">本周新增</div></div></div>
+      <div class="stat-card"><div class="stat-icon bg-purple">📆</div><div class="stat-info"><div class="stat-num" id="statMonth">-</div><div class="stat-label">本月新增</div></div></div>
+    </div>
+
+    <!-- 7天趋势 -->
+    <div class="chart-section">
+      <div class="section-title">最近7天注册趋势</div>
+      <div class="chart-bars" id="chartBars"></div>
+    </div>
+
+    <!-- 学校/年级排行 -->
+    <div class="dual-col">
+      <div class="chart-section" style="margin-bottom:0;">
+        <div class="section-title">🏫 学校来源 TOP10</div>
+        <ul class="rank-list" id="schoolRank"></ul>
+      </div>
+      <div class="chart-section" style="margin-bottom:0;">
+        <div class="section-title">🎓 年级分布</div>
+        <ul class="rank-list" id="gradeRank"></ul>
+      </div>
+    </div>
+
+    <!-- 工具栏 -->
+    <div class="toolbar">
+      <input type="text" class="search-box" id="searchBox" placeholder="搜索姓名 / 学校 / 手机号...">
+      <select class="select-grade" id="selectGrade">
+        <option value="">全部年级</option>
+        <option value="高一">高一</option>
+        <option value="高二">高二</option>
+        <option value="高三">高三</option>
+        <option value="初一">初一</option>
+        <option value="初二">初二</option>
+        <option value="初三">初三</option>
+        <option value="其他">其他</option>
+      </select>
+      <button class="btn-refresh" id="btnRefresh">🔄 刷新</button>
+      <button class="btn-export" id="btnExport">📥 导出CSV</button>
+    </div>
+
+    <!-- 数据表 -->
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>姓名</th>
+            <th>年级</th>
+            <th>学校</th>
+            <th>手机号</th>
+            <th>注册时间</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr><td colspan="7"><div class="loading"><div class="spinner"></div></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 分页 -->
+    <div class="pagination" id="pagination"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== 全局状态 =====
+// API_BASE 支持三种配置方式：URL参数 > localStorage > 同源
+var API_BASE = (function() {
+  var urlParam = new URLSearchParams(location.search).get('api');
+  if (urlParam) { localStorage.setItem('api_base', urlParam); return urlParam; }
+  return localStorage.getItem('api_base') || location.origin;
+})();
+var token = sessionStorage.getItem('admin_token') || '';
+var localMode = false; // 本地模式：后端连不上时，读取本机 localStorage 的注册数据
+var currentPage = 1;
+var totalPages = 1;
+var totalCount = 0;
+var limit = 50;
+
+// 读取本机缓存的注册数据（与主站共用 localStorage）
+function getLocalRegs() {
+  try {
+    var arr = JSON.parse(localStorage.getItem('tj_regs') || '[]');
+    return Array.isArray(arr) ? arr : [];
+  } catch (e) { return []; }
+}
+
+function setLocalRegs(arr) {
+  localStorage.setItem('tj_regs', JSON.stringify(arr));
+}
+
+// ===== API地址配置弹窗 =====
+function showApiConfig() {
+  var current = API_BASE || location.origin;
+  var html = '<div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:99999;" id="apiConfigMask">' +
+    '<div style="background:#fff;border-radius:16px;padding:32px;width:420px;max-width:90vw;">' +
+    '<div style="font-size:18px;font-weight:700;color:#c96442;margin-bottom:16px;">⚙️ 后端地址配置</div>' +
+    '<div style="font-size:13px;color:#888;margin-bottom:12px;">请输入后端服务的API地址（含https://）</div>' +
+    '<input type="text" id="apiInput" value="' + current + '" style="width:100%;padding:10px 14px;border:2px solid #e5e4dd;border-radius:8px;font-size:14px;outline:none;margin-bottom:16px;box-sizing:border-box;">' +
+    '<div style="display:flex;gap:12px;">' +
+    '<button onclick="document.getElementById(\'apiConfigMask\').remove()" style="flex:1;padding:10px;border:1px solid #e5e4dd;border-radius:8px;background:#fff;cursor:pointer;">取消</button>' +
+    '<button onclick="saveApiBase()" style="flex:1;padding:10px;border:none;border-radius:8px;background:#c96442;color:#fff;cursor:pointer;font-weight:600;">保存并刷新</button>' +
+    '</div></div></div>';
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+window.saveApiBase = function() {
+  var val = document.getElementById('apiInput').value.trim().replace(/\/$/, '');
+  if (val) { localStorage.setItem('api_base', val); location.reload(); }
+};
+
+// ===== 工具函数 =====
+function showToast(msg, type) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + (type || '');
+  setTimeout(function() { t.className = 'toast'; }, 2500);
+}
+
+function api(path, options) {
+  options = options || {};
+  options.headers = options.headers || {};
+  options.headers['Content-Type'] = 'application/json';
+  if (token) options.headers['Authorization'] = 'Bearer ' + token;
+  return fetch(API_BASE + path, options).then(function(r) {
+    return r.json().then(function(data) {
+      if (!r.ok && r.status === 401) {
+        // token 过期
+        sessionStorage.removeItem('admin_token');
+        token = '';
+        showLogin();
+        throw new Error('未授权');
+      }
+      return data;
+    });
+  });
+}
+
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, function(c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+
+function gradeTag(g) {
+  var cls = 'tag-other';
+  if (g === '高一') cls = 'tag-g3';
+  else if (g === '高二') cls = 'tag-g4';
+  else if (g === '高三') cls = 'tag-g5';
+  else if (g === '初三') cls = 'tag-g6';
+  return '<span class="tag-grade ' + cls + '">' + escapeHtml(g) + '</span>';
+}
+
+function formatTime(iso) {
+  var d = new Date(iso);
+  var pad = function(n) { return n < 10 ? '0' + n : n; };
+  return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
+
+// ===== 登录 =====
+function showLogin() {
+  document.getElementById('loginPage').style.display = 'flex';
+  document.getElementById('adminPage').style.display = 'none';
+}
+
+function showAdmin() {
+  document.getElementById('loginPage').style.display = 'none';
+  document.getElementById('adminPage').style.display = 'block';
+  document.getElementById('topbarUser').textContent = localMode ? '管理员（本地模式）' : '管理员';
+  loadStats();
+  loadRegistrations();
+}
+
+function doLogin() {
+  var pass = document.getElementById('loginPass').value;
+  var err = document.getElementById('loginErr');
+  if (!pass) { err.textContent = '请输入密码'; return; }
+  err.textContent = '正在连接后端...';
+
+  fetch(API_BASE + '/api/admin/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password: pass })
+  }).then(function(r) { return r.json(); }).then(function(data) {
+    if (data.success) {
+      localMode = false;
+      token = data.token;
+      sessionStorage.setItem('admin_token', token);
+      showAdmin();
+    } else {
+      err.textContent = data.message || '登录失败';
+    }
+  }).catch(function(e) {
+    console.error('后端连接失败:', e);
+    var localCount = getLocalRegs().length;
+    err.innerHTML = '<div style="text-align:left;line-height:1.6;">' +
+      '<b>后端连接失败！</b> 原因：' + escapeHtml(e.message || '网络或隧道中断') + '<br>' +
+      '当前后端地址：<code>' + API_BASE + '</code><br>' +
+      '方案一：重新启动后端（node server.js）和隧道（npx localtunnel --port 3000）<br>' +
+      '方案二：<b>进入本地模式</b>，读取当前浏览器缓存的 ' + localCount + ' 条注册数据' +
+      '</div>' +
+      '<div style="margin-top:12px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">' +
+      '<button onclick="showApiConfig()" style="padding:6px 14px;border:1px solid #c96442;border-radius:6px;background:#fff;color:#c96442;cursor:pointer;">⚙️ 修改后端地址</button>' +
+      '<button onclick="enterLocalMode()" style="padding:6px 14px;border:none;border-radius:6px;background:#c96442;color:#fff;cursor:pointer;font-weight:600;">📦 本地模式（' + localCount + ' 条）</button>' +
+      '</div>';
+  });
+}
+
+window.enterLocalMode = function() {
+  localMode = true;
+  token = 'LOCAL';
+  sessionStorage.setItem('admin_token', token);
+  showAdmin();
+};
+
+document.getElementById('loginBtn').onclick = doLogin;
+document.getElementById('loginPass').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') doLogin();
+});
+
+document.getElementById('btnLogout').onclick = function() {
+  sessionStorage.removeItem('admin_token');
+  token = '';
+  showLogin();
+  document.getElementById('loginPass').value = '';
+};
+
+document.getElementById('btnApiConfig').onclick = showApiConfig;
+
+// 本地模式统计
+function buildLocalStats() {
+  var regs = getLocalRegs();
+  var now = new Date();
+  var todayStr = now.toISOString().slice(0,10);
+  var oneDay = 24*60*60*1000;
+  var weekAgo = new Date(now - 7*oneDay);
+  var monthAgo = new Date(now - 30*oneDay);
+
+  var total = regs.length;
+  var today = 0, week = 0, month = 0;
+  var schools = {}, grades = {};
+  var dailyMap = {};
+  for (var i = 0; i < 7; i++) {
+    var d = new Date(now - i*oneDay);
+    dailyMap[d.toISOString().slice(0,10)] = 0;
+  }
+
+  regs.forEach(function(r) {
+    var t = r.time || '';
+    var date = t.slice(0,10);
+    if (!date) return;
+    if (date === todayStr) today++;
+    if (date >= weekAgo.toISOString().slice(0,10)) week++;
+    if (date >= monthAgo.toISOString().slice(0,10)) month++;
+    if (dailyMap.hasOwnProperty(date)) dailyMap[date]++;
+    var s = r.school || '未知学校';
+    schools[s] = (schools[s] || 0) + 1;
+    var g = r.grade || '未知年级';
+    grades[g] = (grades[g] || 0) + 1;
+  });
+
+  var topSchools = Object.keys(schools).map(function(k){ return {name:k, count:schools[k]}; }).sort(function(a,b){ return b.count-a.count; }).slice(0,10);
+  var gradeStats = Object.keys(grades).map(function(k){ return {name:k, count:grades[k]}; }).sort(function(a,b){ return b.count-a.count; }).slice(0,10);
+  var dailyTrend = Object.keys(dailyMap).sort().map(function(k){ return {date:k.slice(5), count:dailyMap[k]}; });
+
+  return { success:true, total:total, today:today, week:week, month:month, topSchools:topSchools, gradeStats:gradeStats, dailyTrend:dailyTrend };
+}
+
+// ===== 统计数据 =====
+function loadStats() {
+  if (localMode) {
+    var data = buildLocalStats();
+    renderStats(data);
+    return;
+  }
+  api('/api/admin/stats').then(function(data) {
+    if (data.success) renderStats(data);
+  }).catch(function(e) { console.error('统计加载失败:', e); });
+}
+
+function renderStats(data) {
+  document.getElementById('statTotal').textContent = data.total;
+  document.getElementById('statToday').textContent = data.today;
+  document.getElementById('statWeek').textContent = data.week;
+  document.getElementById('statMonth').textContent = data.month;
+
+  // 趋势图
+  var maxCount = Math.max.apply(null, data.dailyTrend.map(function(d) { return d.count; }));
+  maxCount = maxCount || 1;
+  var barsHtml = data.dailyTrend.map(function(d) {
+    var h = Math.round((d.count / maxCount) * 100);
+    return '<div class="chart-bar">' +
+      '<div class="bar-fill" style="height:' + Math.max(h, 3) + '%" data-count="' + d.count + '人"></div>' +
+      '<div class="bar-label">' + d.date + '</div>' +
+    '</div>';
+  }).join('');
+  document.getElementById('chartBars').innerHTML = barsHtml;
+
+  // 学校排行
+  var schoolHtml = data.topSchools.map(function(s, i) {
+    var cls = i === 0 ? 'top1' : i === 1 ? 'top2' : i === 2 ? 'top3' : 'other';
+    return '<li class="rank-item"><span class="rank-num ' + cls + '">' + (i+1) + '</span><span class="rank-name">' + escapeHtml(s.name) + '</span><span class="rank-count">' + s.count + '人</span></li>';
+  }).join('');
+  document.getElementById('schoolRank').innerHTML = schoolHtml || '<li class="rank-item"><span class="rank-name" style="color:#999;">暂无数据</span></li>';
+
+  // 年级分布
+  var gradeHtml = data.gradeStats.map(function(g, i) {
+    var cls = i === 0 ? 'top1' : i === 1 ? 'top2' : i === 2 ? 'top3' : 'other';
+    return '<li class="rank-item"><span class="rank-num ' + cls + '">' + (i+1) + '</span><span class="rank-name">' + escapeHtml(g.name) + '</span><span class="rank-count">' + g.count + '人</span></li>';
+  }).join('');
+  document.getElementById('gradeRank').innerHTML = gradeHtml || '<li class="rank-item"><span class="rank-name" style="color:#999;">暂无数据</span></li>';
+}
+
+// ===== 注册列表 =====
+function loadRegistrations() {
+  var search = document.getElementById('searchBox').value.trim();
+  var grade = document.getElementById('selectGrade').value;
+  var tbody = document.getElementById('tableBody');
+  tbody.innerHTML = '<tr><td colspan="7"><div class="loading"><div class="spinner"></div></div></td></tr>';
+
+  if (localMode) {
+    var regs = getLocalRegs();
+    // 转换成本地统计需要的格式
+    var list = regs.map(function(r, idx) {
+      return {
+        id: idx + 1,
+        name: r.name,
+        grade: r.grade,
+        school: r.school,
+        phone: r.phone,
+        createdAt: r.time
+      };
+    }).sort(function(a,b){ return new Date(b.createdAt || 0) - new Date(a.createdAt || 0); });
+
+    if (search) {
+      var q = search.toLowerCase();
+      list = list.filter(function(r) {
+        return (r.name && r.name.toLowerCase().includes(q)) ||
+               (r.school && r.school.toLowerCase().includes(q)) ||
+               (r.phone && r.phone.includes(q));
+      });
+    }
+    if (grade) {
+      list = list.filter(function(r) { return r.grade === grade; });
+    }
+
+    totalCount = list.length;
+    totalPages = Math.ceil(totalCount / limit) || 1;
+    if (currentPage > totalPages) currentPage = totalPages || 1;
+    var start = (currentPage - 1) * limit;
+    var pageItems = list.slice(start, start + limit);
+
+    renderTable(pageItems);
+    return;
+  }
+
+  var params = 'page=' + currentPage + '&limit=' + limit;
+  if (search) params += '&search=' + encodeURIComponent(search);
+  if (grade) params += '&grade=' + encodeURIComponent(grade);
+
+  api('/api/admin/registrations?' + params).then(function(data) {
+    if (!data.success) { tbody.innerHTML = '<tr><td colspan="7" class="empty">加载失败</td></tr>'; return; }
+    totalCount = data.total;
+    totalPages = Math.ceil(data.total / limit);
+    renderTable(data.items);
+  }).catch(function(e) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty">加载失败: ' + escapeHtml(e.message) + '</td></tr>';
+  });
+}
+
+function renderTable(items) {
+  var tbody = document.getElementById('tableBody');
+  if (items.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty"><div class="empty-icon">📭</div>暂无注册数据</div></td></tr>';
+  } else {
+    tbody.innerHTML = items.map(function(r, i) {
+      var idx = (currentPage - 1) * limit + i + 1;
+      var id = localMode ? r.id : r.id;
+      return '<tr>' +
+        '<td>' + idx + '</td>' +
+        '<td>' + escapeHtml(r.name) + '</td>' +
+        '<td>' + gradeTag(r.grade) + '</td>' +
+        '<td>' + escapeHtml(r.school) + '</td>' +
+        '<td>' + escapeHtml(r.phone) + '</td>' +
+        '<td>' + formatTime(r.createdAt) + '</td>' +
+        '<td><button class="btn-delete" onclick="deleteReg(' + id + ')">删除</button></td>' +
+      '</tr>';
+    }).join('');
+  }
+  renderPagination();
+}
+
+// ===== 分页 =====
+function renderPagination() {
+  var el = document.getElementById('pagination');
+  if (totalPages <= 1) { el.innerHTML = '<span class="page-info">共 ' + totalCount + ' 条</span>'; return; }
+
+  var html = '';
+  html += '<button class="page-btn" onclick="goPage(' + (currentPage-1) + ')" ' + (currentPage<=1?'disabled':'') + '>上一页</button>';
+
+  var start = Math.max(1, currentPage - 2);
+  var end = Math.min(totalPages, currentPage + 2);
+  if (start > 1) { html += '<button class="page-btn" onclick="goPage(1)">1</button>'; if (start > 2) html += '<span class="page-info">...</span>'; }
+  for (var i = start; i <= end; i++) {
+    html += '<button class="page-btn ' + (i===currentPage?'active':'') + '" onclick="goPage(' + i + ')">' + i + '</button>';
+  }
+  if (end < totalPages) { if (end < totalPages-1) html += '<span class="page-info">...</span>'; html += '<button class="page-btn" onclick="goPage(' + totalPages + ')">' + totalPages + '</button>'; }
+
+  html += '<button class="page-btn" onclick="goPage(' + (currentPage+1) + ')" ' + (currentPage>=totalPages?'disabled':'') + '>下一页</button>';
+  html += '<span class="page-info">共 ' + totalCount + ' 条 / ' + totalPages + ' 页</span>';
+  el.innerHTML = html;
+}
+
+window.goPage = function(p) {
+  if (p < 1 || p > totalPages || p === currentPage) return;
+  currentPage = p;
+  loadRegistrations();
+};
+
+// ===== 删除 =====
+window.deleteReg = function(id) {
+  if (!confirm('确定删除这条注册记录？此操作不可恢复！')) return;
+  if (localMode) {
+    var regs = getLocalRegs().sort(function(a,b){ return new Date(b.time || 0) - new Date(a.time || 0); });
+    var idx = id - 1;
+    if (idx >= 0 && idx < regs.length) {
+      regs.splice(idx, 1);
+      setLocalRegs(regs);
+      showToast('删除成功', 'success');
+      loadStats();
+      loadRegistrations();
+    } else {
+      showToast('删除失败', 'error');
+    }
+    return;
+  }
+  api('/api/admin/registrations/' + id, { method: 'DELETE' }).then(function(data) {
+    if (data.success) {
+      showToast('删除成功', 'success');
+      loadRegistrations();
+      loadStats();
+    } else {
+      showToast(data.message || '删除失败', 'error');
+    }
+  }).catch(function() { showToast('网络错误', 'error'); });
+};
+
+// ===== 搜索 =====
+var searchTimer;
+document.getElementById('searchBox').addEventListener('input', function() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(function() { currentPage = 1; loadRegistrations(); }, 300);
+});
+document.getElementById('selectGrade').addEventListener('change', function() {
+  currentPage = 1;
+  loadRegistrations();
+});
+
+// ===== 刷新 =====
+document.getElementById('btnRefresh').onclick = function() {
+  loadStats();
+  loadRegistrations();
+  showToast('已刷新', 'success');
+};
+
+// ===== 导出 =====
+function buildCsvBlob(rows) {
+  var csv = '\ufeff姓名,年级,学校,手机号,注册时间\n';
+  rows.forEach(function(r) {
+    csv += [r.name, r.grade, r.school, r.phone, r.createdAt || r.time].map(function(f) { return '"' + String(f || '').replace(/"/g, '""') + '"'; }).join(',') + '\n';
+  });
+  return new Blob([csv], { type: 'text/csv;charset=utf-8' });
+}
+
+document.getElementById('btnExport').onclick = function() {
+  if (localMode) {
+    var regs = getLocalRegs().map(function(r) { return { name:r.name, grade:r.grade, school:r.school, phone:r.phone, createdAt:r.time, time:r.time }; });
+    if (!regs.length) { showToast('暂无数据', 'error'); return; }
+    var blob = buildCsvBlob(regs);
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = '注册数据_' + new Date().toISOString().slice(0,10) + '.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('导出成功', 'success');
+    return;
+  }
+  fetch(API_BASE + '/api/admin/export', {
+    headers: { 'Authorization': 'Bearer ' + token }
+  }).then(function(r) { return r.blob(); }).then(function(blob) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = '注册数据_' + new Date().toISOString().slice(0,10) + '.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('导出成功', 'success');
+  }).catch(function() { showToast('导出失败', 'error'); });
+};
+
+// ===== 初始化 =====
+function init() {
+  if (token) {
+    // 验证 token 是否有效
+    api('/api/admin/stats').then(function(data) {
+      if (data.success) { localMode = false; showAdmin(); }
+      else { showLogin(); }
+    }).catch(function() {
+      // 如果本地有缓存数据，也允许进入本地模式
+      if (getLocalRegs().length > 0) {
+        document.getElementById('loginErr').innerHTML = '<div style="text-align:center;">后端连接失败，但检测到本机有 ' + getLocalRegs().length + ' 条缓存数据。<br><button onclick="enterLocalMode()" style="margin-top:8px;padding:6px 14px;border:none;border-radius:6px;background:#c96442;color:#fff;cursor:pointer;font-weight:600;">📦 进入本地模式</button></div>';
+      }
+      showLogin();
+    });
+  } else {
+    showLogin();
+  }
+}
+init();
+</script>
+</body>
+</html>

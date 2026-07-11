@@ -85,7 +85,11 @@ async function loadData() {
     try {
       var res = await supabaseRequest('GET', 'registrations?select=*&order=id.asc');
       if (res.status === 200 && Array.isArray(res.data)) {
-        registrations = res.data;
+        // 映射 created_at -> createdAt 保持兼容
+        registrations = res.data.map(function(r) {
+          if (r.created_at && !r.createdAt) r.createdAt = r.created_at;
+          return r;
+        });
         nextId = registrations.reduce(function(max, r) { return Math.max(max, r.id || 0); }, 0) + 1;
         console.log('[DB] 从 Supabase 加载 ' + registrations.length + ' 条注册记录');
       } else {
@@ -124,18 +128,22 @@ function saveData() {
 // ----- 新增记录（双模式） -----
 async function addRecord(record) {
   if (USE_SUPABASE) {
-    // 插入 Supabase，不传 id（自增），不传 createdAt（用数据库默认或代码值）
+    // 插入 Supabase，不传 id（自增），不传 created_at（用数据库 DEFAULT NOW()）
     var insertData = {
       name: record.name,
-      grade: record.grade,
-      school: record.school,
-      phone: record.phone,
-      ip: record.ip || '',
-      "createdAt": record.createdAt
+      grade: record.grade || null,
+      school: record.school || null,
+      phone: record.phone
     };
+    // 可选字段（表里有则传）
+    if (record.wechat) insertData.wechat = record.wechat;
+    if (record.subject) insertData.subject = record.subject;
+    if (record.target) insertData.target = record.target;
+    if (record.note) insertData.note = record.note;
     var res = await supabaseRequest('POST', 'registrations', insertData);
     if (res.status === 201 && Array.isArray(res.data) && res.data[0]) {
       record.id = res.data[0].id;
+      record.createdAt = res.data[0].created_at || record.createdAt;
       registrations.push(record);
       return record;
     } else {

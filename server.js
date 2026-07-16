@@ -8,6 +8,7 @@
  *
  * 功能：
  *   POST /api/register           - 探客注册（公开）
+ *   GET  /api/check-phone?phone=  - 手机号查重（公开，跨浏览器验证）
  *   POST /api/admin/login        - 管理员登录
  *   GET  /api/admin/registrations - 注册列表（搜索/分页，需鉴权）
  *   DELETE /api/admin/registrations/:id - 删除单条（需鉴权）
@@ -323,6 +324,26 @@ async function handleRequest(req, res) {
     } catch(e) {
       console.error('[注册] 错误:', e.message);
       sendJSON(res, 500, { success: false, message: '服务器内部错误' });
+    }
+    return;
+  }
+
+  // 手机号查重接口（跨浏览器验证已注册用户）
+  if (pathname === '/api/check-phone' && req.method === 'GET') {
+    var checkPhone = (urlObj.searchParams.get('phone') || '').trim();
+    if (!checkPhone || !/^1[3-9]\d{9}$/.test(checkPhone)) {
+      sendJSON(res, 400, { success: false, message: '请提供正确的手机号' });
+      return;
+    }
+    var found = registrations.find(function(r) { return r.phone === checkPhone; });
+    if (found) {
+      sendJSON(res, 200, {
+        success: true,
+        found: true,
+        data: { name: found.name, grade: found.grade, school: found.school, phone: found.phone }
+      });
+    } else {
+      sendJSON(res, 200, { success: true, found: false, message: '未找到该手机号的注册记录' });
     }
     return;
   }
